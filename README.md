@@ -1,40 +1,20 @@
-# block_stream2
+# buffer_crc32
 
-A stream of blocks.
+crc32 that works with binary data and fancy character sets, outputs buffer, signed or unsigned data and has tests.
 
-Write data into it, and it'll output data in buffer blocks the size you specify, padding with zeroes if necessary.
+Derived from the sample CRC implementation in the PNG specification: http://www.w3.org/TR/PNG/#D-CRCAppendix
 
-fock by https://github.com/substack/block-stream2
+fock by https://github.com/brianloveswords/buffer-crc32
 
 ## usage
 ```ts
-import { assert, assertEquals } from "https://deno.land/std@0.140.0/testing/asserts.ts";
-import { stat } from "https://deno.land/std@0.140.0/node/fs/promises.ts"
-import fs from "https://deno.land/std@0.140.0/node/fs.ts";
+import { assertEquals } from "https://deno.land/std@0.140.0/testing/asserts.ts";
 import { Buffer } from "https://deno.land/std@0.140.0/node/buffer.ts";
-import { BlockStream2 } from "https://deno.land/x/block_stream2/mod.ts";
+import crc32 from "https://deno.land/x/buffer_crc32/mod.ts";
 
-Deno.test("BlockStream2", async function() {
-  const b = new BlockStream2(16);
-	const fstr = fs.createReadStream("./mod_test.ts", { encoding: 'utf8' })
-  fstr.pipe(b)
-  b.resume();
-	let totalBytes = 0;
-	const stats = await stat("./mod_test.ts");
-	await new Promise((resolve, reject) => {
-		b.on("data", (data) => {
-			assertEquals(data.byteLength, 16, 'chunks should be 16 bytes long');
-			assert(Buffer.isBuffer(data));
-			totalBytes += data.length;
-		});
-		b.on("error", reject);
-		b.on('end', () => {
-			const expectedBytes = stats.size + (16 - stats.size % 16)
-			assertEquals(totalBytes, expectedBytes);
-			resolve(undefined);
-		});
-	});
+Deno.test("crc32", function() {
+  const input = Buffer.from('hey sup bros');
+  const expected = Buffer.from([0x47, 0xfa, 0x55, 0x70]);
+  assertEquals(crc32(input), expected);
 });
 ```
-
-When .end() or .flush() is called, it'll pad the block with zeroes.
